@@ -1,8 +1,13 @@
 ---
 title: "Joint model for LGCP with two different observations processes"
 author: "Sara Martino"
-date: ""
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+# knit: (function(inputFile, encoding) {
+#   rmarkdown::render(inputFile, 
+#   encoding = encoding, 
+#   output_file = "index.html" })
 output: html_document
+
 ---
 
 ```{r, include=FALSE}
@@ -312,7 +317,7 @@ log_detect_ferry = function(dist, sig)
 ```
 
 
-```{r run-model, message=TRUE}
+```{r run-model, message=FALSE}
 # Define the model components
 
 
@@ -378,12 +383,8 @@ fit <- bru(components = cmp,
 
 Lets now look at some results.
 
-```{r}
-print(fit$summary.fixed[,c(1,3,5)])
-```
 
-
-## Linear effects
+## Linear effects and parameters of the Gaussian field
 
 Estimated posterior marginals for $\beta_0$ and $\beta_1$ and for the parameters $\rho$ and $\sigma$ of the Gaussian field $\omega(s)$
 
@@ -547,31 +548,5 @@ p5 = ggplot() + gg(r3, aes(color = layer)) + scale_color_scico() +
 
 
 p1+p2+p4+p4 + p5  + plot_layout(ncol = 2)
-```
-
-# Expected number of sightings
-
-```{r}
-ipoints = ipoints(as(poly,"Spatial"), mesh)
-
-
-s1 = predict(fit,
-             ipoints,
-             ~ sum(weight * exp(Intercept + depth +  SPDE)))
-
-
-sightings <- predict(fit, 
-                 ipoints,
-                ~ data.frame(N = 0:1600,
-                             dpois(0:1600,
-                                   lambda = sum(weight * exp(Intercept + depth +  SPDE)))),
-                n.samples = 1000)
-
-
-
-
-sightings %>%  ggplot() +
-  geom_line( aes(x = N, y = mean)) 
-
 ```
 
