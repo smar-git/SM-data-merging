@@ -1,24 +1,8 @@
----
-title: "Joint model for LGCP with two different observations processes"
-author: "Sara Martino"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
-# knit: (function(inputFile, encoding) {
-#   rmarkdown::render(inputFile, 
-#   encoding = encoding, 
-#   output_file = "index.html" })
-output: html_document
-
----
-
-```{r, include=FALSE}
+## ---- include=FALSE-------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-```
 
-# Set up and read Data and shapefiles
 
-1.  Set things up
-
-```{r setup}
+## ----setup----------------------------------------------------------
 library(RandomFields)
 library(INLA)
 library(inlabru)
@@ -52,11 +36,9 @@ f.fill = function(x,y, covar)
 }
 
 
-```
 
-2.  Read the shapefile (area of interest, ferry tracks)
 
-```{r read_files}
+## ----read_files-----------------------------------------------------
 
 # read shapefiles -------------------------------------------
 
@@ -82,11 +64,9 @@ int_social_sp = SpatialPixelsDataFrame(cbind(x = int_social$x, y = int_social$y)
 
 
 win <- as.owin(poly)
-```
 
-# Create the mesh for the SPDE model
 
-```{r mesh, fig.width = 4, fig.height=  4}
+## ----mesh, fig.width = 4, fig.height=  4----------------------------
 # CREATE THE MESH
 boundary = as(st_simplify(poly, dTolerance = 1.3),"Spatial") 
 max.edge = 10
@@ -98,19 +78,15 @@ mesh = inla.mesh.2d(boundary = boundary,
                           offset = c(max.edge, bound.outer))
 
 A = inla.spde.make.A(mesh = mesh, loc = as.matrix(depth[,c(1,2)]))
-```
 
-```{r fig_mesh, fig.width = 4, fig.height=4, echo = FALSE}
+
+## ----fig_mesh, fig.width = 4, fig.height=4, echo = FALSE------------
 
 ggplot() + geom_sf(data = poly) +
   gg(mesh) + theme_map
-```
 
-# Data Simulation
 
-We simulate a point process. This is the "real" process that we then thin according to two different observation process
-
-```{r simulate}
+## ----simulate-------------------------------------------------------
 # simulate point process -------------------------------------------------
 RFoptions(seed=67356453)
 
@@ -140,9 +116,9 @@ data.sp <- SpatialPoints(cbind(data$x,data$y),
 # Save the intensity surface for later reference
 Lambda = raster::raster(attributes(data)$Lambda)
 
-```
 
-```{r int:plot, fig.width = 7, fig.height= 7, echo = FALSE, fig.cap="Left: observed point process, in the background is the density of the LGCP. Right: density for the SM observation process", echo = FALSE}
+
+## ----int:plot, fig.width = 7, fig.height= 7, echo = FALSE, fig.cap="Left: observed point process, in the background is the density of the LGCP. Right: density for the SM observation process", echo = FALSE----
 r1 = raster::mask(Lambda, poly)
 r2 = raster::crop(r1, poly)
 r3 <- raster::rasterToPoints(r2, spatial = TRUE, proj4string = CRS(my_crs)) 
@@ -156,36 +132,15 @@ p2 = ggplot() + gg(int_social_sp) + theme_map + scale_fill_scico() + theme(legen
   geom_sf(data = poly, alpha = 0)
 
 p1 + p2
-```
 
-## Thin the true process and create two observed datasets
 
-```{r detection_param, echo = FALSE}
+## ----detection_param, echo = FALSE----------------------------------
 scale_detect1 = 0.5
 location_detect1 = 0
 sig_detect2 = 2
-```
 
-Here we imagine two observation process, one on a transect (as the ferry data) and the other similar to the SM data.
 
--   For the SM data we imagine that the probability of keeping an observation in the dataset is higher where the density in Figure \@ref(int:plot) (right) is higher. The detection function is:
-
-\begin{equation}
-g_{1}(s) = \Phi(\frac{1}{\xi_{1}} d_{1}(s)-\mu_1) (\#eq:g1)
-\end{equation}
-where $d_{1}(s)$ is the density in Figure \@ref(int:plot) (right) , and $\Phi$ is the normal cumulative distribution function (cdf) with $\mu_1=$ 
-`r location_detect1`
- and $\xi_1=$`r scale_detect1` as location and scale parameters, respectively.
-
--   For the ferry data, the detection function is
-
-\begin{equation}
-g_{2}(s)=\exp\left(-\frac{d_2(s)^2}{2\ \xi_2^2}\right) (\#eq:g1)
-\end{equation}
-
-where $d_2(\cdot)$ is the is the perpendicular distance to the ferry track and $\xi=$ `r sig_detect2` is a scale parameter.
-
-```{r thinning}
+## ----thinning-------------------------------------------------------
 # function to compute the distance between a point in space and the nearest ferry track
 surf2 = function(x,y)
 {
@@ -219,9 +174,9 @@ data2 = all_data %>%
          u = runif(data$n)) %>%
   mutate(detect = u<pdetect) %>%
   dplyr::filter(detect)
-```
 
-```{r, echo = FALSE, fig.width = 6, fig.height=  6}
+
+## ---- echo = FALSE, fig.width = 6, fig.height=  6-------------------
 p1 = ggplot() + geom_point(data = all_data, aes(x,y), alpha = 0.2) +
   geom_point(data = data1, aes(x,y)) +
   geom_sf(data = poly, alpha = 0) +
@@ -233,11 +188,9 @@ p2 = ggplot() + geom_point(data = all_data, aes(x,y), alpha = 0.2) +
     geom_sf(data = poly, alpha = 0) +
   ggtitle("Ferry Data ")+ theme_map
 p1 + p2
-```
 
-`inlabru` requires the dataset to be `SpatialPointsDataFrame` objects
 
-```{r}
+## -------------------------------------------------------------------
 # create the datasets as SP and all maps as SPDF --------------------------
 data1_sp = SpatialPointsDataFrame(cbind(x = data1$x, y = data1$y), 
                                            data = data.frame(d = rep(1,length(data1$x))),
@@ -251,45 +204,14 @@ data2_sp = SpatialPointsDataFrame(cbind(x = data2$x, y = data2$y),
 d1 = rgeos::gDistance(data2_sp, ferry_sp, byid=TRUE)
 d1 = apply(d1,2,min)
 data2_sp$dist_obs = d1
-```
 
-# Model Setup
 
-Our model assumes that the "true" process is LGCP with log-intensity:
-
-$$
-\lambda(s) = \alpha + \beta x(s) + \omega(s)
-$$ 
-
-where $\alpha$ is a common itercept, $\beta$ is the regression coefficient for the covariate $x(s)$ (the depth) and $\omega(s)$ is a 0 mean Gaussian process with Matern covariance of order 1 with range $\rho$ and standard deviation $\sigma$.
-
-We assume the folowing priors - $\alpha,\beta\sim\mathbf{N}(0,0.1^2)$ 
-
-- for $\rho$ we use a PC prior with $u = 100$, $\alpha = 0.5$ 
-
-- for $\sigma$ we use a PC prior with $u = .7$, $\alpha = 0.01$
-
-We assume further that the "true" process is observed in two different ways (conditionally independent given $\lambda(s)$) so that the two observed log-itesity are 
-$$ 
-\lambda_1(s) = \lambda(s) + g_1(s) \lambda_2(s) = \lambda(s) + g_2(s)
-$$ 
-where $g_1(s)$ and $g_2(s)$ are defined in Equations \@ref(eq:g1) and \@ref(eq:g2) respectively.
-
-We use the following prior for the parameters $\xi_1, \mu_1, \xi_2$ in $g_1(s)$ and $g_2(s)$ 
-
-```{r prior0, echo = F}
+## ----prior0, echo = F-----------------------------------------------
 rate_detect1 = 1
 rate_detect2 = 0.5
-```
 
 
-- $\mu_1\sim\mathbf{N}(0,1)$
-
-- $\xi_i = F^{-1}_{\alpha_i}(\Phi(\theta_i) \  i = 1,2$ where  $F^{-1}(\cdot)$ is the inverse exponential cdf with rate $\alpha_i$ and
-$\Phi$ is a normal cdf. This corresponds to assigning an exponential prior to $\xi_i$ with rate $\alpha_i$. We then assign $\theta$ a standard normal prior and set $\alpha_1 =rate_detect1$ and $\alpha_2 =rate_detect2$ 
-
-
-```{r priors}
+## ----priors---------------------------------------------------------
 # Create the SPDE model 
 matern <-  inla.spde2.pcmatern(mesh,
                                    prior.sigma = c(.7, 0.01),
@@ -317,10 +239,9 @@ log_detect_ferry = function(dist, sig)
 { 
   -0.5*(dist/ sig)^2
 }
-```
 
 
-```{r run-model, message=FALSE}
+## ----run-model, message=FALSE---------------------------------------
 # Define the model components
 
 
@@ -380,18 +301,9 @@ fit <- bru(components = cmp,
 
 
 
-```
-
-# Results
-
-Lets now look at some results.
 
 
-## Linear effects and parameters of the Gaussian field
-
-Estimated posterior marginals for $\beta_0$ and $\beta_1$ and for the parameters $\rho$ and $\sigma$ of the Gaussian field $\omega(s)$
-
-```{r res-linear, fig.width = 4, fig.height= 4, echo = FALSE}
+## ----res-linear, fig.width = 4, fig.height= 4, echo = FALSE---------
 
 data.frame(rbind(fit$marginals.fixed$Intercept,
       fit$marginals.fixed$depth ,
@@ -406,14 +318,9 @@ data.frame(rbind(fit$marginals.fixed$Intercept,
                                           param = c("Intercept","beta","range for SPDE", "sd for SPDE")),
                         aes(xintercept = x))
 
-```
-
-## Detection function for the SM data 
-
-Estimated detection function for the SM data with 95\% credible interval. The red line indicates the true detection function.
 
 
-```{r res-social,fig.width = 4, fig.height= 4}
+## ----res-social,fig.width = 4, fig.height= 4------------------------
 # detection function for ferry data
 scale_social = function(...)
 {
@@ -442,13 +349,9 @@ df = data.frame(scale = as.numeric(scale1),
           location_detect1),
             aes(x,y),color = "red") +
   coord_cartesian(ylim=c(0,1))
-```
 
-## Detection function for the Ferry data 
 
-Estimated detection function for the ferry data with 95\% credible interval. THe red line indicates the true detection function.
-
-```{r res-ferry,fig.width = 4, fig.height= 4}
+## ----res-ferry,fig.width = 4, fig.height= 4-------------------------
 # detection function for ferry data
 detection_ferry = function(...)
 {
@@ -470,15 +373,9 @@ data.frame(apply(scale2, 2, function(x) exp(-0.5*(seq(0,7,0.1)/ x)^2))) %>%
               mutate(y = exp(-0.5*(x/sig_detect2 )^2)),
             aes(x,y),color = "red")
 
-```
 
-## Estimated intensity surface
 
-The function `generate` in `inlabru` can generate from the fitted model
-
-### Posterior median and RWPCI
-
-```{r res-field,fig.width = 7, fig.height= 7}
+## ----res-field,fig.width = 7, fig.height= 7-------------------------
 pxl = pixels(mesh ,nx = 200, ny = 200, mask =poly_sp)
 
 samples_fit = generate(fit,  data = pxl, ~ exp(Intercept + depth +  SPDE))
@@ -507,15 +404,9 @@ p2 = data.frame(x = coordinates(pxl)[,1],
 
 
 p1+p2
-```
-
-### Posterior samples
 
 
-
-We can also have a look at some simulated posterior samples surfaces, these are all coherent with the estimated model
-
-```{r res-field2,fig.width = 7, fig.height= 7}
+## ----res-field2,fig.width = 7, fig.height= 7------------------------
 ss = sample(1:100,4)
 p1 = data.frame(x = coordinates(pxl)[,1],
            y = coordinates(pxl)[,2],
@@ -551,5 +442,4 @@ p5 = ggplot() + gg(r3, aes(color = layer)) + scale_color_scico() +
 
 
 p1+p2+p4+p4 + p5  + plot_layout(ncol = 2)
-```
 
