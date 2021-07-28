@@ -3,7 +3,7 @@
 
 
 
-Here we have created a tutorial, using simulated data, to show how inlabru can be used to fit a model similar to the one in the paper 
+Here we have created a tutorial, using simulated data, to show how inlabru can be used to fit a model similar to the one in the paper:
 
 "Integration of presence-only data from several data sources. A case study on dolphins' spatial distribution" by S. Martino; D. Pace et al
  accepted for publication in Ecography (DOI 10.1111/ecog.05843)
@@ -18,3 +18,5 @@ Install the last testing version of inla from the [r-inla](https://www.r-inla.or
 
 
 See the [website](https://smar-git.github.io/SM-data-merging/.)
+
+The observed sighthings are also available from 

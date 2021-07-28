@@ -1,0 +1,23 @@
+
+Descriptions
+ 
+A dataset containing sigthings locations and type for two species of dolphins in the central Mediterranean area
+ 
+Format:
+ 
+  A dataframe with 862 rows and 6 variables:
+ 
+  Date: The date of the sigthings
+  
+  x,y: Location of the sigthings, using the CRS 
+       "+proj=utm +zone=32 +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"
+       
+  Species: One of "Stenella coeruleoalba" or "Tursiops truncatus"
+  
+  Type: Type of sightings, one of "Social", "FERRY", "UNIRM"
+  
+  dist_obs: For data of type "FERRY": the perpendicular distance to the ferry track (in Km)
+            For data of type "UNIRM": the  distance to the researcher's boat  (in Km)
+            
+   Data Source:
+   	
