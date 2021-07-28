@@ -8,7 +8,6 @@ Here we have created a tutorial, using simulated data, to show how inlabru can b
 "Integration of presence-only data from several data sources. A case study on dolphins' spatial distribution" by S. Martino; D. Pace et al
  accepted for publication in Ecography (DOI 10.1111/ecog.05843)
 
-
 but based on simulated data.
 
 The model merges together two datasets, one from "social media" and one from ferry.
