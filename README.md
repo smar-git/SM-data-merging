@@ -19,4 +19,4 @@ Install the last testing version of inla from the [r-inla](https://www.r-inla.or
 
 See the [website](https://smar-git.github.io/SM-data-merging/.)
 
-The observed sighthings are also available from 
+The observed sighthings are also available [here](https://github.com/smar-git/SM-data-merging/tree/main/Observed_Sightings) together with a text file describing the dataset. 
